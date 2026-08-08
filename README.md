@@ -27,7 +27,7 @@ Built with [fastmcp](https://gofastmcp.com).
 uvx --from /path/to/hledger-mcp hledger-mcp
 ```
 
-### Add to Claude Code / orbit mcp.json
+### Add to Claude Code
 
 ```json
 {
@@ -63,6 +63,62 @@ Or in `mcp.json`:
   }
 }
 ```
+
+## Using with orbit
+
+[orbit](https://github.com/eloircorona/orbit) is an AI session launcher that manages context — MCPs, instructions, and permissions — across a layered scope hierarchy: **workspace → tenant → project → repository**. Each layer has its own `mcp.json`, and orbit merges them automatically when launching a session.
+
+hledger-mcp is a natural fit for orbit's model: you define it once at the tenant level and it loads automatically every time you open a finance session, without polluting other contexts.
+
+### 1. Clone the server
+
+```bash
+git clone https://github.com/eloircorona/hledger-mcp.git ~/finance/hledger-mcp
+```
+
+### 2. Add to your finance tenant's mcp.json
+
+In orbit, each tenant has a dedicated `mcp.json` at:
+
+```
+~/AI/tenants/FINANCE/mcp.json
+```
+
+```json
+{
+  "mcpServers": {
+    "hledger": {
+      "command": "uvx",
+      "args": ["--from", "/home/user/finance/hledger-mcp", "hledger-mcp"],
+      "env": {
+        "HLEDGER_JOURNAL": "/home/user/finance/ledger.journal"
+      }
+    }
+  }
+}
+```
+
+### 3. Launch your finance session
+
+```bash
+orbit launch <workspace> FINANCE
+```
+
+That's it. orbit starts the AI session with hledger-mcp already connected — alongside any other MCPs defined at the workspace or project level (SQLite, filesystem, etc.). When you switch to a different tenant, those tools disappear. No manual toggling.
+
+### Why this matters
+
+A typical personal finance setup in orbit pairs hledger-mcp with:
+
+| MCP | Purpose |
+|---|---|
+| `hledger` | Typed access to the journal — query balances, add transactions |
+| `filesystem` | Browse receipts, bank exports, SAT documents |
+| `sqlite` | Structured queries over imported CSV data |
+
+Because orbit merges MCPs layer by layer, you can define the journal-level tools at the tenant and override the journal path at the project level — useful if you keep separate journals per year or entity.
+
+> **orbit** handles context scoping, MCP lifecycle, engine selection (Claude, Gemini, local), and session instructions — so the AI always has the right tools for the current domain without any manual configuration per session.
 
 ## Tool reference
 
