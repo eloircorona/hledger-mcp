@@ -66,30 +66,53 @@ Or in `mcp.json`:
 
 ## Using with orbit
 
-[orbit](https://github.com/eloircorona/orbit) is an AI session launcher that manages context — MCPs, instructions, and permissions — across a layered scope hierarchy: **workspace → tenant → project → repository**. Each layer has its own `mcp.json`, and orbit merges them automatically when launching a session.
+[orbit](https://github.com/eloircorona/orbit) is an AI session launcher that manages context — MCPs, instructions, and permissions — across a layered scope hierarchy: **workspace → tenant → project → repository**. MCPs are defined per layer and merged automatically on launch.
 
-hledger-mcp is a natural fit for orbit's model: you define it once at the tenant level and it loads automatically every time you open a finance session, without polluting other contexts.
+hledger-mcp integrates as an orbit plugin: install once globally, activate per tenant, and it appears automatically every time you open a finance session — without polluting other contexts.
 
-### 1. Clone the server
+### 1. Install the plugin
+
+Clone into orbit's plugin directory so it has a stable, version-controlled home:
 
 ```bash
-git clone https://github.com/eloircorona/hledger-mcp.git ~/finance/hledger-mcp
+git clone https://github.com/eloircorona/hledger-mcp.git ~/.orbit/plugins/hledger-mcp
 ```
 
-### 2. Add to your finance tenant's mcp.json
+### 2. Register the MCP globally
 
-In orbit, each tenant has a dedicated `mcp.json` at:
-
-```
-~/AI/tenants/FINANCE/mcp.json
-```
+Add the server entry to `~/.orbit/plugins.mcp.json`:
 
 ```json
 {
   "mcpServers": {
     "hledger": {
       "command": "uvx",
-      "args": ["--from", "/home/user/finance/hledger-mcp", "hledger-mcp"],
+      "args": ["--from", "/home/user/.orbit/plugins/hledger-mcp", "hledger-mcp"]
+    }
+  }
+}
+```
+
+### 3. Enable the plugin
+
+Add `"hledger"` to the enabled list in `~/.orbit/plugin-state.toml`:
+
+```toml
+enabled = [
+    "hledger",
+    "sonarcloud",
+    "linear",
+]
+```
+
+### 4. Set the journal path per tenant
+
+The plugin is now globally registered but orbit lets you configure it per scope. In your finance tenant's `mcp.json` — typically `~/AI/tenants/FINANCE/mcp.json` — override the journal path via env:
+
+```json
+{
+  "mcpServers": {
+    "hledger": {
       "env": {
         "HLEDGER_JOURNAL": "/home/user/finance/ledger.journal"
       }
@@ -98,13 +121,21 @@ In orbit, each tenant has a dedicated `mcp.json` at:
 }
 ```
 
-### 3. Launch your finance session
+The tenant-level entry merges with the global plugin definition — you only need to specify the override, not repeat the full server config.
+
+### 5. Launch and use
 
 ```bash
 orbit launch <workspace> FINANCE
 ```
 
-That's it. orbit starts the AI session with hledger-mcp already connected — alongside any other MCPs defined at the workspace or project level (SQLite, filesystem, etc.). When you switch to a different tenant, those tools disappear. No manual toggling.
+orbit starts the session with hledger connected alongside any other MCPs in scope. Switch to a different tenant and hledger disappears automatically.
+
+### Updating the plugin
+
+```bash
+cd ~/.orbit/plugins/hledger-mcp && git pull
+```
 
 ### Why this matters
 
@@ -113,12 +144,12 @@ A typical personal finance setup in orbit pairs hledger-mcp with:
 | MCP | Purpose |
 |---|---|
 | `hledger` | Typed access to the journal — query balances, add transactions |
-| `filesystem` | Browse receipts, bank exports, SAT documents |
+| `filesystem` | Browse receipts, bank exports, tax documents |
 | `sqlite` | Structured queries over imported CSV data |
 
-Because orbit merges MCPs layer by layer, you can define the journal-level tools at the tenant and override the journal path at the project level — useful if you keep separate journals per year or entity.
+Because orbit merges MCPs layer by layer, you can define tools at the tenant and override paths or env vars at the project level — useful if you keep separate journals per year or entity.
 
-> **orbit** handles context scoping, MCP lifecycle, engine selection (Claude, Gemini, local), and session instructions — so the AI always has the right tools for the current domain without any manual configuration per session.
+> **orbit** handles context scoping, MCP lifecycle, engine selection (Claude, Gemini, local), and session instructions — so the AI always has the right tools for the current domain, with zero manual configuration per session.
 
 ## Tool reference
 
