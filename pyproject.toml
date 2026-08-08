@@ -1,0 +1,16 @@
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hledger-mcp"
+version = "0.1.0"
+description = "MCP server for hledger — double-entry accounting"
+requires-python = ">=3.11"
+dependencies = ["fastmcp>=2.0"]
+
+[project.scripts]
+hledger-mcp = "hledger_mcp.server:main"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/hledger_mcp"]
