@@ -66,64 +66,24 @@ Or in `mcp.json`:
 
 ## Using with orbit
 
-[orbit](https://github.com/eloircorona/orbit) is an AI session launcher that manages context — MCPs, instructions, and permissions — across a layered scope hierarchy: **workspace → tenant → project → repository**. MCPs are defined per layer and merged automatically on launch.
+[orbit](https://github.com/eloircorona/orbit) is an AI session launcher that manages context — MCPs, instructions, and permissions — across a layered scope hierarchy: **workspace → tenant → project → repository**. hledger ships as a first-class orbit plugin.
 
-hledger-mcp integrates as an orbit plugin: install once globally, activate per tenant, and it appears automatically every time you open a finance session — without polluting other contexts.
-
-### 1. Install the plugin
-
-Clone into orbit's plugin directory so it has a stable, version-controlled home:
+### Setup (3 commands)
 
 ```bash
-git clone https://github.com/eloircorona/hledger-mcp.git ~/.orbit/plugins/hledger-mcp
+# Install hledger if not already present
+orbit plugins install hledger
+
+# Configure the journal path for this instance
+orbit plugins auth hledger
+
+# Enable the MCP for the current scope (tenant, project, or global)
+orbit plugins enable hledger
 ```
 
-### 2. Register the MCP globally
+`orbit plugins auth` prompts for the instance name and journal path, then wires everything up. No config files to edit manually.
 
-Add the server entry to `~/.orbit/plugins.mcp.json`:
-
-```json
-{
-  "mcpServers": {
-    "hledger": {
-      "command": "uvx",
-      "args": ["--from", "/home/user/.orbit/plugins/hledger-mcp", "hledger-mcp"]
-    }
-  }
-}
-```
-
-### 3. Enable the plugin
-
-Add `"hledger"` to the enabled list in `~/.orbit/plugin-state.toml`:
-
-```toml
-enabled = [
-    "hledger",
-    "sonarcloud",
-    "linear",
-]
-```
-
-### 4. Set the journal path per tenant
-
-The plugin is now globally registered but orbit lets you configure it per scope. In your finance tenant's `mcp.json` — typically `~/AI/tenants/FINANCE/mcp.json` — override the journal path via env:
-
-```json
-{
-  "mcpServers": {
-    "hledger": {
-      "env": {
-        "HLEDGER_JOURNAL": "/home/user/finance/ledger.journal"
-      }
-    }
-  }
-}
-```
-
-The tenant-level entry merges with the global plugin definition — you only need to specify the override, not repeat the full server config.
-
-### 5. Launch and use
+### Launch
 
 ```bash
 orbit launch <workspace> FINANCE
@@ -131,10 +91,13 @@ orbit launch <workspace> FINANCE
 
 orbit starts the session with hledger connected alongside any other MCPs in scope. Switch to a different tenant and hledger disappears automatically.
 
-### Updating the plugin
+### Multiple journals
 
-```bash
-cd ~/.orbit/plugins/hledger-mcp && git pull
+Need separate instances for personal and business finances? Run `orbit plugins auth hledger` again with a different instance name — orbit tracks them independently:
+
+```
+orbit plugins auth hledger   # instance: personal → ~/finance/personal.journal
+orbit plugins auth hledger   # instance: business → ~/finance/business.journal
 ```
 
 ### Why this matters
@@ -147,7 +110,7 @@ A typical personal finance setup in orbit pairs hledger-mcp with:
 | `filesystem` | Browse receipts, bank exports, tax documents |
 | `sqlite` | Structured queries over imported CSV data |
 
-Because orbit merges MCPs layer by layer, you can define tools at the tenant and override paths or env vars at the project level — useful if you keep separate journals per year or entity.
+Because orbit merges MCPs layer by layer, you can scope hledger to a specific tenant so it only loads when you're working on finances — never leaking into other sessions.
 
 > **orbit** handles context scoping, MCP lifecycle, engine selection (Claude, Gemini, local), and session instructions — so the AI always has the right tools for the current domain, with zero manual configuration per session.
 
