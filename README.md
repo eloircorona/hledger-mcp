@@ -71,6 +71,10 @@ Or in `mcp.json`:
 ### Setup (3 commands)
 
 ```bash
+# Register the plugin with orbit
+curl -fsSL https://raw.githubusercontent.com/eloircorona/hledger-mcp/main/hledger.toml \
+  -o ~/.orbit/plugins/hledger.toml
+
 # Install hledger if not already present
 orbit plugins install hledger
 
@@ -82,6 +86,12 @@ orbit plugins enable hledger
 ```
 
 `orbit plugins auth` prompts for the instance name and journal path, then wires everything up. No config files to edit manually.
+
+If you already cloned the repo, the one-liner becomes:
+
+```bash
+cp hledger.toml ~/.orbit/plugins/
+```
 
 ### Launch
 
