@@ -96,7 +96,7 @@ cp hledger.toml ~/.orbit/plugins/
 ### Launch
 
 ```bash
-orbit launch <workspace> FINANCE
+orbit launch <scope>
 ```
 
 orbit starts the session with hledger connected alongside any other MCPs in scope. Switch to a different tenant and hledger disappears automatically.
